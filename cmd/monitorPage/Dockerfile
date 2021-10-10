@@ -23,7 +23,8 @@ COPY ./cmd/monitorPage/main.go ./
 RUN go build -o build/monitorPage
 
 FROM alpine
+WORKDIR /monitor
 COPY --from=builder /builder/build/monitorPage ./
 COPY ./cmd/monitorPage/index.html ./
-ENTRYPOINT [ "/monitorPage" ]
+ENTRYPOINT [ "/monitor/monitorPage" ]
 EXPOSE 8000

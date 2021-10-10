@@ -39,6 +39,8 @@ const (
 	logInfoFileName      = "logInfo.txt"
 )
 
+var inconsistencyErr *mirroring.LogInconsistencyError
+
 type LogInfo struct {
 	Size int64
 	Hash string
@@ -131,7 +133,7 @@ func main() {
 	// Open file to create/append new snapshots
 	file, err := os.OpenFile(*logInfoFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	defer file.Close()
 
@@ -139,7 +141,7 @@ func main() {
 	if first {
 		_, err = file.WriteString(fmt.Sprintf("%d %s\n", treeSize, root))
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -153,8 +155,10 @@ func main() {
 	for {
 		// Check for root hash consistency
 		newTreeSize, newRoot, err := mirroring.VerifyLogConsistency(rekorClient, treeSize, root)
-		if err != nil {
-			log.Println(err)
+		if errors.As(err, &inconsistencyErr) {
+			log.Printf("%v\n", err)
+		} else if err != nil {
+			log.Fatal(err)
 		} else {
 			log.Printf("Root hash consistency verified - Tree Size: %d Root Hash: %s\n", newTreeSize, newRoot)
 		}
@@ -163,7 +167,7 @@ func main() {
 		if newTreeSize != treeSize {
 			_, err = file.WriteString(fmt.Sprintf("%d %s\n", treeSize, root))
 			if err != nil {
-				log.Println(err)
+				log.Fatal(err)
 			}
 
 			treeSize = newTreeSize
