@@ -17,6 +17,7 @@ FROM golang:1.16-alpine
 
 WORKDIR /build
 
+RUN apk add gcc libc-dev
 COPY go.mod ./
 COPY go.sum ./
 

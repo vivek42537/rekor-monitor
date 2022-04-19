@@ -33,6 +33,7 @@ import (
 
 	"github.com/sigstore/rekor-monitor/mirroring"
 	"github.com/sigstore/rekor/pkg/client"
+    _ "github.com/go-sql-driver/mysql"
 )
 
 // Default values for mirroring job parameters
@@ -77,7 +78,7 @@ func readLogInfo(treeSize *int64, root *string) error {
 // indefinitely to perform consistency check for every time interval that was specified.
 func main() {
 	fmt.Println("CODE STARTED")
-	os.Setenv("dbName", "./ourDB.db")
+	// os.Setenv("dbName", "./ourDB.db")
 	// Command-line flags that are parameters to the mirroring job
 	serverURL := flag.String("url", publicRekorServerURL, "URL to the rekor server that is to be monitored")
 	interval := flag.Int64("interval", 5, "Length of interval between each periodical consistency check")
@@ -169,7 +170,7 @@ func main() {
 			root = newRoot
 		}
 		// log.Println("NEWDB: ", "root:"+os.Getenv("mySQLPassword")+"@tcp("+os.Getenv("mySQLIPAddress")+":"+ os.Getenv("mySQLIPPort") +")/")
-		database, err := sql.Open("sqlite3", os.Getenv("dbName")) //open database
+		database, err := sql.Open("mysql", os.Getenv("DBNAME")) //open database
 		if err != nil {
 			log.Printf("Error %s when openeing DB\n", err)
 		}
@@ -188,9 +189,9 @@ func main() {
 
 				pay, _ := payload.MarshalBinary()
 				decodeB := string(pay[:])
-				log.Println("ID IS: %d", id)
+				// log.Println("ID IS: %d", id)
 				// log.Println("payload value: %s", decodeB)
-				log.Println("index is: ", i)
+				// log.Println("index is: ", i)
 				d := mirroring.Data{
 					ID:      i,
 					Payload: decodeB,
