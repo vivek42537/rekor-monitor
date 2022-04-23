@@ -16,7 +16,7 @@ type Data struct {
 
 func InitTable(database *sql.DB) error {
 	//sql query string (if no db)
-	statement, err := database.Exec("CREATE TABLE entries (idx INTEGER PRIMARY KEY NOT NULL, payload TEXT)") 
+	statement, err := database.Exec("CREATE TABLE entries (idx INTEGER PRIMARY KEY NOT NULL, payload TEXT)")
 	if err != nil {
 		log.Printf("Error %s when creating product table", err)
 		return err
