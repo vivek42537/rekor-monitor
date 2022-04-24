@@ -81,13 +81,6 @@ func main() {
 	logInfoFile := flag.String("file", logInfoFileName, "Name of the file containing initial merkle tree information")
 	flag.Parse()
 
-	// Initialize system logger
-	// syslogger, err := syslog.New(syslog.LOG_INFO, "rekor-monitor")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.SetOutput(syslogger)
-
 	// Initialize a rekor client
 	rekorClient, err := client.GetRekorClient(*serverURL)
 	if err != nil {
@@ -134,7 +127,7 @@ func main() {
 	// Open file to create/append new snapshots
 	file, err := os.OpenFile(*logInfoFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	defer file.Close()
 
@@ -142,7 +135,7 @@ func main() {
 	if first {
 		_, err = file.WriteString(fmt.Sprintf("%d %s\n", treeSize, root))
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -150,7 +143,7 @@ func main() {
 		// Check for root hash consistency
 		newTreeSize, newRoot, err := mirroring.VerifyLogConsistency(rekorClient, treeSize, root)
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 		} else {
 			log.Printf("Root hash consistency verified - Tree Size: %d Root Hash: %s\n", newTreeSize, newRoot)
 		}
@@ -159,7 +152,7 @@ func main() {
 		if newTreeSize != treeSize {
 			_, err = file.WriteString(fmt.Sprintf("%d %s\n", treeSize, root))
 			if err != nil {
-				log.Println(err)
+				log.Fatal(err)
 			}
 
 			treeSize = newTreeSize
@@ -169,7 +162,7 @@ func main() {
 		database, err := sql.Open("mysql", fmt.Sprintf("root:%s@tcp(%s)/%s",
 			os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_NAME")))
 		if err != nil {
-			log.Printf("Error %s when openeing DB\n", err)
+			log.Fatal(err)
 		}
 
 		mirroring.InitTable(database)
@@ -179,23 +172,19 @@ func main() {
 			id = 0
 		}
 
-		if newTreeSize-id != 0 { //last id in our database compared to new tree size
-			// mirroring.rows, err = mirroring.getLatestX(database, (newTreeSize - id))
+		if newTreeSize-id != 0 {
 			for i := id + 1; i < newTreeSize; i++ {
 				_, payload, _ := mirroring.GetLogEntryByIndex(i, rekorClient)
 
 				pay, _ := payload.MarshalBinary()
 				decodeB := string(pay[:])
-				// log.Println("ID IS: %d", id)
-				// log.Println("payload value: %s", decodeB)
-				// log.Println("index is: ", i)
 				d := mirroring.Data{
 					ID:      i,
 					Payload: decodeB,
 				}
 				_, err := mirroring.Insert(database, d)
 				if err != nil {
-					log.Println("%s\n", err)
+					log.Fatal(err)
 				}
 			}
 		}
