@@ -17,13 +17,11 @@ package main
 
 import (
 	"bufio"
-    "bytes"
 	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -77,7 +75,6 @@ func readLogInfo(treeSize *int64, root *string) error {
 // indefinitely to perform consistency check for every time interval that was specified.
 func main() {
 	fmt.Println("CODE STARTED")
-	// os.Setenv("dbName", "./ourDB.db")
 	// Command-line flags that are parameters to the mirroring job
 	serverURL := flag.String("url", publicRekorServerURL, "URL to the rekor server that is to be monitored")
 	interval := flag.Int64("interval", 5, "Length of interval between each periodical consistency check")
@@ -169,12 +166,8 @@ func main() {
 			root = newRoot
 		}
 
-		passwd, err := ioutil.ReadFile(os.Getenv("DB_PASSWORD"))
-		if err != nil {
-			log.Println(err)
-		}
-		database, err := sql.Open("mysql", fmt.Sprintf("root:%s@tcp(db)/%s",
-			bytes.Replace(passwd, []byte("\n"), []byte(""), -1), os.Getenv("DB_NAME")))
+		database, err := sql.Open("mysql", fmt.Sprintf("root:%s@tcp(%s)/%s",
+			os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_NAME")))
 		if err != nil {
 			log.Printf("Error %s when openeing DB\n", err)
 		}
